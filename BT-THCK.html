@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý & Tra Cứu Bảo Trì</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 20px; background-color: #f0f4f8; color: #333; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h2 { color: #1a73e8; text-align: center; margin-bottom: 25px; }
+        
+        /* Khu vực tìm kiếm nhanh */
+        .search-box { margin-bottom: 20px; padding: 15px; background: #fffde7; border: 2px solid #fff176; border-radius: 8px; display: flex; align-items: center; gap: 10px; }
+        .search-box input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; font-weight: bold; color: #d32f2f; }
+        
+        /* Form nhập liệu */
+        .form-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 25px; padding: 15px; background: #f8f9fa; border-radius: 8px; }
+        .form-group input { padding: 10px; border: 1px solid #ddd; border-radius: 5px; flex: 1; min-width: 140px; }
+        .form-group button { padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; }
+        
+        /* Bảng */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #eee; padding: 12px; text-align: left; }
+        th { background-color: #1a73e8; color: white; position: sticky; top: 0; }
+        tr:nth-child(even) { background-color: #fafafa; }
+        tr.hidden { display: none; } /* Dùng để ẩn dòng khi tìm kiếm */
+
+        .status-overdue { color: white; background: #d32f2f; padding: 4px 10px; border-radius: 12px; font-size: 12px; }
+        .status-ok { color: white; background: #388e3c; padding: 4px 10px; border-radius: 12px; font-size: 12px; }
+        #loading { text-align: center; display: none; color: #1a73e8; font-weight: bold; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📋 HỆ THỐNG TRA CỨU & BẢO TRÌ THIẾT BỊ</h2>
+
+    <div class="search-box">
+        <span>🔍 <strong>TÌM NHANH:</strong></span>
+        <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Nhập Mã Số hoặc Tên Máy để lọc...">
+    </div>
+
+    <div id="loading">⏳ Đang đồng bộ dữ liệu...</div>
+
+    <div class="form-group">
+        <input type="text" id="mCode" placeholder="Mã số (TB-01)">
+        <input type="text" id="mName" placeholder="Tên thiết bị">
+        <input type="date" id="mDate" title="Ngày bảo trì gần nhất">
+        <input type="number" id="mCycle" placeholder="Chu kỳ (Ngày)">
+        <button onclick="addMachine()">Lưu Máy Mới</button>
+    </div>
+
+    <table id="machineTable">
+        <thead>
+            <tr>
+                <th>Mã Số</th>
+                <th>Tên Thiết Bị</th>
+                <th>Bảo Trì Gần Nhất</th>
+                <th>Chu Kỳ</th>
+                <th>Bảo Trì Tiếp Theo</th>
+                <th>Trạng Thái</th>
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
+</div>
+
+<script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzgX1RvgaxsBZn-GIfr1EaPSBxAZqn1mvE0MZGovnAN1UW0rV_tk4HV-BN34FkF6xfV/exec";
+
+    // Hàm lọc dữ liệu trực tiếp trên bảng (Tìm kiếm nhanh)
+    function filterTable() {
+        const input = document.getElementById("searchInput");
+        const filter = input.value.toUpperCase();
+        const table = document.getElementById("machineTable");
+        const tr = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < tr.length; i++) { // Chạy từ 1 để bỏ qua tiêu đề
+            const tdCode = tr[i].getElementsByTagName("td")[0];
+            const tdName = tr[i].getElementsByTagName("td")[1];
+            if (tdCode || tdName) {
+                const txtValueCode = tdCode.textContent || tdCode.innerText;
+                const txtValueName = tdName.textContent || tdName.innerText;
+                if (txtValueCode.toUpperCase().indexOf(filter) > -1 || txtValueName.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].classList.remove("hidden");
+                } else {
+                    tr[i].classList.add("hidden");
+                }
+            }
+        }
+    }
+
+    async function loadData() {
+        document.getElementById('loading').style.display = 'block';
+        try {
+            const res = await fetch(WEB_APP_URL);
+            const data = await res.json();
+            renderTable(data);
+        } catch (e) { console.error(e); }
+        document.getElementById('loading').style.display = 'none';
+    }
+
+    async function addMachine() {
+        const code = document.getElementById('mCode').value;
+        const name = document.getElementById('mName').value;
+        const lastDate = document.getElementById('mDate').value;
+        const cycle = document.getElementById('mCycle').value;
+
+        if (!code || !name || !lastDate || !cycle) return alert("Nhập đủ thông tin!");
+
+        document.getElementById('loading').style.display = 'block';
+        const payload = { code, name, lastDate, cycle: parseInt(cycle) };
+
+        try {
+            await fetch(WEB_APP_URL, { method: "POST", redirect: "follow", body: JSON.stringify(payload) });
+            alert("Đã cập nhật!");
+            location.reload();
+        } catch (e) { alert("Lỗi!"); }
+    }
+
+    function renderTable(data) {
+        const tbody = document.querySelector('#machineTable tbody');
+        tbody.innerHTML = '';
+        const now = new Date();
+        now.setHours(0,0,0,0);
+
+        data.forEach(row => {
+            const [id, code, name, lastDate, cycle] = row;
+            const dLast = new Date(lastDate);
+            const dNext = new Date(dLast);
+            dNext.setDate(dLast.getDate() + parseInt(cycle));
+
+            const isOverdue = now > dNext;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${code}</strong></td>
+                    <td>${name}</td>
+                    <td>${dLast.toLocaleDateString('vi-VN')}</td>
+                    <td>${cycle} ngày</td>
+                    <td><b style="color:#1a73e8">${dNext.toLocaleDateString('vi-VN')}</b></td>
+                    <td><span class="${isOverdue ? 'status-overdue' : 'status-ok'}">${isOverdue ? 'HẾT HẠN' : 'AN TOÀN'}</span></td>
+                </tr>`;
+        });
+    }
+
+    loadData();
+</script>
+
+</body>
+</html>
