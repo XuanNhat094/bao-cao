@@ -18,7 +18,6 @@ window.onload = function() {
     if (cachedAcc) {
         try {
             db_accounts = JSON.parse(cachedAcc);
-            renderUserSelect();
         } catch(e) {
             db_accounts = {};
         }
@@ -28,24 +27,12 @@ window.onload = function() {
     loadDeviceList(); 
 };
 
-function renderUserSelect() {
-    const select = document.getElementById("userNameInput");
-    if (!select) return; 
-    select.innerHTML = '<option value="" disabled selected>-- Chọn tên của bạn --</option>';
-    
-    Object.keys(db_accounts).forEach(user => {
-        if (user && user.trim() !== "") {
-            let opt = document.createElement("option");
-            opt.value = user;
-            opt.textContent = user;
-            select.appendChild(opt);
-        }
-    });
-}
-
 async function loadData() {
     const reportArea = document.getElementById('reportText');
+    const listArea = document.getElementById('reportList');
+    
     if (reportArea) reportArea.value = "⏳ Đang đồng bộ và làm mới dữ liệu...";
+    if (listArea) listArea.innerHTML = "<div class='text-muted p-2'>⏳ Đang đồng bộ...</div>";
 
     try {
         const res = await fetch(`${G_URL}?_cc=${new Date().getTime()}`);
@@ -55,10 +42,10 @@ async function loadData() {
         db_accounts = json.accounts || {};
 
         localStorage.setItem("cached_accounts", JSON.stringify(db_accounts));
-        renderUserSelect();
         filterData();
     } catch (e) {
-        if (reportArea) reportArea.value = "⚠️ Lỗi kết nối Google Sheets. Vui lòng bấm Làm mới.";
+        if (reportArea) reportArea.value = "⚠️ Lỗi kết nối Google Sheets.";
+        if (listArea) listArea.innerHTML = "<div class='text-danger p-2'>⚠️ Lỗi kết nối.</div>";
         console.error("Lỗi loadData:", e);
     }
 }
@@ -105,7 +92,7 @@ function autoFillDeviceName(maSo) {
 }
 
 async function sendWorkReport() {
-    const btn = document.getElementById('btnSubmit');
+    const btn = document.getElementById('btnSubmit') || document.querySelector('button[onclick="sendWorkReport()"]');
     const text = document.getElementById('btnText');
     const loader = document.getElementById('loadingSpinner');
     
@@ -118,12 +105,13 @@ async function sendWorkReport() {
     if (!noidung2) return alert("⚠️ Vui lòng nhập đầy đủ tên máy!");
 
     noidung2 = noidung2.charAt(0).toLowerCase() + noidung2.slice(1);
-
     const noidungHoanChinh = `${noidung1} ${noidung2} ${noidung3}`;
 
     const payload = {
+        action: "create",
         jobContent: noidungHoanChinh,
-        reporter: reporter
+        reporter: reporter,
+        date: ngayReport
     };
 
     if (btn) btn.disabled = true;
@@ -139,16 +127,10 @@ async function sendWorkReport() {
         });
         
         alert("✅ Gửi thành công!");
-        
-        allData.unshift({ 
-            ngay: ngayReport, 
-            noidung: noidungHoanChinh 
-        });
+        loadData(); 
         
         if (document.getElementById('noidung2')) document.getElementById('noidung2').value = "";
         if (document.getElementById('noidung3')) document.getElementById('noidung3').value = "KLM-CK-";
-        
-        filterData();
     } catch (err) {
         alert("❌ Lỗi gửi: " + err.message);
     } finally {
@@ -161,38 +143,134 @@ async function sendWorkReport() {
 function filterData() {
     const filterDateEl = document.getElementById('filterDate');
     const reportArea = document.getElementById('reportText');
-    if (!filterDateEl || !reportArea) return;
-
+    const listArea = document.getElementById('reportList');
+    
+    if (!filterDateEl) return;
     const filterVal = filterDateEl.value;
     if (!filterVal) return;
 
     const filtered = allData.filter(item => item.ngay && item.ngay.substring(0, 10) === filterVal);
     const d = filterVal.split('-');
-    let content = `Báo cáo công việc ca 2 ngày: ${d[2]}/${d[1]}/${d[0]}\n`;
 
-    if (filtered.length === 0) {
-        content += "(Chưa có dữ liệu)";
-    } else {
+    // HƯỚNG 1: Nếu HTML cũ dùng ô Textarea
+    if (reportArea) {
+        let content = `Báo cáo công việc ca 2 ngày: ${d[2]}/${d[1]}/${d[0]}\n`;
+        if (filtered.length === 0) {
+            content += "(Chưa có dữ liệu)";
+        } else {
+            filtered.forEach(item => {
+                content += `- ${item.noidung}\n`;
+            });
+        }
+        reportArea.value = content;
+    }
+
+    // HƯỚNG 2: Nếu HTML mới dùng danh sách List sửa/xóa
+    if (listArea) {
+        listArea.innerHTML = "";
+        if (filtered.length === 0) {
+            listArea.innerHTML = "<div class='text-muted p-2'>(Chưa có dữ liệu ngày này)</div>";
+            return;
+        }
         filtered.forEach(item => {
-            content += `- ${item.noidung}\n`;
+            const rowId = item.id || item.rowNum; 
+            const div = document.createElement('div');
+            div.className = "list-group-item d-flex justify-content-between align-items-center gap-2 p-2";
+            div.innerHTML = `
+                <span class="report-item-text" style="font-size:14px; word-break: break-word;">- ${item.noidung}</span>
+                <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-warning py-0 px-2" onclick="editReport('${rowId}', '${item.noidung}')">✏️</button>
+                    <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="deleteReport('${rowId}')">❌</button>
+                </div>
+            `;
+            listArea.appendChild(div);
         });
     }
-    reportArea.value = content;
 }
 
-function copyReport() {
-    const copyText = document.getElementById("reportText");
-    if (!copyText || !copyText.value || copyText.value.includes("Đang đồng bộ")) return;
+async function editReport(id, oldContent) {
+    if (!id || id === "undefined") return alert("❌ Không tìm thấy ID dòng để sửa. Hãy bấm làm mới!");
+    const newContent = prompt("Chỉnh sửa nội dung báo cáo:", oldContent);
+    if (!newContent || newContent.trim() === "" || newContent.trim() === oldContent) return;
 
-    copyText.select();
-    navigator.clipboard.writeText(copyText.value).then(() => {
-        const btn = document.querySelector('button[onclick="copyReport()"]');
-        if (btn) {
-            const oldText = btn.innerHTML;
-            btn.innerHTML = "✅ Đã chép";
-            setTimeout(() => btn.innerHTML = oldText, 2000);
-        }
-    });
+    const payload = { action: "update", id: id, jobContent: newContent.trim() };
+    
+    try {
+        await fetch(G_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+        alert("✅ Đã gửi yêu cầu sửa!");
+        loadData();
+    } catch (e) {
+        alert("❌ Lỗi sửa: " + e.message);
+    }
+}
+
+async function deleteReport(id) {
+    if (!id || id === "undefined") return alert("❌ Không tìm thấy ID dòng để xóa. Hãy bấm làm mới!");
+    if (!confirm("⚠️ Bạn có chắc chắn muốn XÓA dòng báo cáo này không?")) return;
+
+    const payload = { action: "delete", id: id };
+
+    try {
+        await fetch(G_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+        alert("✅ Đã gửi yêu cầu xóa!");
+        loadData();
+    } catch (e) {
+        alert("❌ Lỗi xóa: " + e.message);
+    }
+}
+
+function copyAllReport() {
+    // Tự động kiểm tra xem đang xài giao diện Textarea hay List
+    const reportArea = document.getElementById('reportText');
+    let content = "";
+
+    if (reportArea) {
+        content = reportArea.value;
+    } else {
+        const filterDateEl = document.getElementById('filterDate');
+        if (!filterDateEl || !filterDateEl.value) return alert("Vui lòng chọn ngày!");
+        const d = filterDateEl.value.split('-');
+        content = `Báo cáo công việc ca 2 ngày: ${d[2]}/${d[1]}/${d[0]}\n`;
+        
+        const items = document.querySelectorAll('.report-item-text');
+        items.forEach(el => { content += el.innerText + "\n"; });
+    }
+
+    if (!content || content.includes("(Chưa có dữ liệu)")) return alert("Không có dữ liệu để chép!");
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(content).then(() => { showCopySuccess(); }).catch(() => { fallbackCopyText(content); });
+    } else {
+        fallbackCopyText(content);
+    }
+}
+
+function copyReport() { copyAllReport(); } // Hỗ trợ cả tên hàm cũ lẫn mới để tránh lỗi nút bấm
+
+function showCopySuccess() {
+    const btn = document.querySelector('button[onclick="copyAllReport()"]') || document.querySelector('button[onclick="copyReport()"]');
+    if (btn) {
+        const oldText = btn.innerHTML;
+        btn.innerHTML = "✅ Đã chép ca 2";
+        setTimeout(() => btn.innerHTML = oldText, 2000);
+    }
+}
+
+function fallbackCopyText(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+        document.execCommand('copy');
+        showCopySuccess();
+    } catch (err) {
+        alert("❌ Không thể sao chép tự động!");
+    }
+    document.body.removeChild(textArea);
 }
 
 function toggleMenu() {
