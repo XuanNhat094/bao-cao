@@ -1,4 +1,3 @@
-
 /* ==========================================
    1. CÀI ĐẶT CHUNG & MÀU SẮC CHỦ ĐẠO
    ========================================== */
@@ -133,7 +132,10 @@ body {
     background: white;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    margin: 60px auto 20px auto; /* Chừa khoảng trống phía trên cho nút menu */
+    margin-top: 10px;
+    margin-right: auto;
+    margin-left: auto;
+    margin-bottom: 10px; /* Chừa khoảng trống phía trên cho nút menu */
     max-width: 600px;
     overflow: hidden;
     border: 1px solid var(--border-color);
