@@ -134,6 +134,7 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     margin-right: auto;
     margin-left: auto; 
+    margin-bottom: 10px;
     max-width: 600px;
     overflow: hidden;
     border: 1px solid var(--border-color);
