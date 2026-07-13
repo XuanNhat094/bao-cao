@@ -132,10 +132,8 @@ body {
     background: white;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    margin-top: 10px;
     margin-right: auto;
-    margin-left: auto;
-    margin-bottom: 10px; /* Chừa khoảng trống phía trên cho nút menu */
+    margin-left: auto; 
     max-width: 600px;
     overflow: hidden;
     border: 1px solid var(--border-color);
