@@ -110,12 +110,14 @@ async function sendWorkReport() {
     const loader = document.getElementById('loadingSpinner');
     
     const noidung1 = document.getElementById('noidung1')?.value || "";
-    const noidung2 = document.getElementById('noidung2')?.value.trim() || "";
-    const noidung3 = document.getElementById('noidung3')?.value.trim() || ""; 
+    let noidung2 = document.getElementById('noidung2')?.value.trim() || "";
+    const noidung3 = document.getElementById('noidung3')?.value.trim().toUpperCase() || ""; 
     const ngayReport = document.getElementById('ngay')?.value || "";
     const reporter = localStorage.getItem("reportUser") || "Ẩn danh";
 
     if (!noidung2) return alert("⚠️ Vui lòng nhập đầy đủ tên máy!");
+
+    noidung2 = noidung2.charAt(0).toLowerCase() + noidung2.slice(1);
 
     const noidungHoanChinh = `${noidung1} ${noidung2} ${noidung3}`;
 
