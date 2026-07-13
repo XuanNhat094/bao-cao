@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo Cáo Công Việc THCK</title>
+	<link rel="icon" type="ico" href="icon.ico">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon" href="icon.ico">
+    <link href="CSS/style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<div class="card">
+    <div class="card-header">
+        <h4 class="mb-0">BÁO CÁO CÔNG VIỆC BT-THCK</h4>
+    </div>
+    <div class="card-body p-4">
+        <div class="mb-3">
+            <label class="form-label">Ngày thực hiện</label>
+            <input type="date" id="ngay" class="form-control">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Nội dung công việc</label><br>
+            <div class="d-flex gap-1 mb-2">
+                <select id="noidung1" class="form-select">
+                    <option value="Bảo trì định kỳ">Bảo trì định kỳ</option>
+                    <!--<option value="Xử lý sự cố">Xử lý sự cố</option>
+                    <option value="Kiểm tra">Kiểm tra</option>
+					<option value="Vận hành máy nén khí">Vận hành MNK</option>-->
+                </select>
+                <input type="text" id="noidung3" class="form-control" value="KLM-CK-" style="display:inline-block;" oninput="autoFillDeviceName(this.value)">
+				
+            </div>
+			 <div class="d-flex gap-1 mb-2">
+				 <input type="text" id="noidung2" class="form-control" placeholder="Tên máy...">
+			</div>
+            <!--<input id="noidung4" class="form-control" rows="3" placeholder="Nhập nội dung chi tiết...">-->
+        </div>
+        <!--<div class="mb-3">
+            <label class="form-label">Trạng thái</label>
+            <select id="trangthai" class="form-select">
+                <option value="Hoàn thành">✅ Hoàn thành</option>
+                <option value="Đang thực hiện">🔵 Đang thực hiện</option>
+            </select>
+        </div>-->
+<!--        <div class="mb-3">
+            <label class="form-label">Nhân sự thực hiện</label>
+            <input type="text" id="nhansu" class="form-control" placeholder="Tên nhân viên">
+        </div>-->
+		<!--<div class="mb-3">
+    		<label class="form-label">Tiến độ (%)</label>
+    		<div class="d-flex align-items-center gap-2">
+        	<input type="number" id="ghichu" class="form-control" 
+               min="0" max="100" value="100" 
+               style="width: 80px;" oninput="syncRange(this.value)">     
+        	<input type="range" id="progressRange" class="form-range" 
+               min="0" max="100" value="100" 
+               oninput="syncInput(this.value)">
+    </div>
+</div>-->
+        <button onclick="sendWorkReport()" id="btnSubmit" class="btn btn-primary btn-submit">
+            <span id="btnText">GỬI BÁO CÁO</span>
+            <span id="loadingSpinner" class="spinner-border spinner-border-sm"></span>
+        </button>
+    </div>
+</div>
+    <div class="card-body">
+    <div class="mb-3">
+        <label class="form-label fw-bold">Chọn ngày báo cáo:</label>
+        <input type="date" id="filterDate" class="form-control" onchange="loadData()">
+    </div>
+
+    <div class="row g-2 mb-3">
+        <div class="col-6">
+            <button class="btn btn-primary w-100" onclick="loadData()">
+                🔄 Làm mới
+            </button>
+        </div>
+        <div class="col-6">
+            <button class="btn btn-primary w-100" onclick="copyReport()">
+                📋 Sao chép
+            </button>
+        </div>
+    </div>
+
+    <div class="report-container">
+        <textarea id="reportText" class="form-control bg-light" rows="12" readonly 
+                  style="font-family: 'Courier New', Courier, monospace; white-space: pre-wrap; font-size: 14px; border-bottom-width: 20px;"></textarea>
+    </div>
+</div>
+
+<script src="JS/script.js"></script>
+<div class="footer"><label >Copyright © 2026 Xuan Nhat. All rights reserved.</label></div>
+</body>
+</html>
