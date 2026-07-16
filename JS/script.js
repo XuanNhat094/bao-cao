@@ -231,6 +231,8 @@ function copyAllReport() {
         if (!filterDateEl || !filterDateEl.value) return alert("Vui lòng chọn ngày!");
         const d = filterDateEl.value.split('-');
         content = `Báo cáo công việc ca 2 ngày: ${d[2]}/${d[1]}/${d[0]}\n`;
+        content = `- Trực và kiểm tra hệ thống điện toàn nhà máy KLM \n`;
+        content = `- Theo dõi chuyền Ed, vận hành thiết bị phụ trợ \n`;
         
         const items = document.querySelectorAll('.report-item-text');
         items.forEach(el => { content += el.innerText + "\n"; });
