@@ -72,6 +72,7 @@ function autoFillDeviceName(maSo) {
 
     const thietBiTimThay = ALL_DEVICES.find(item => {
         if (Array.isArray(item)) {
+            // Giả định item[1] là Mã máy, item[2] là Tên máy
             return (item[1] || "").toString().trim().toUpperCase() === maTimKiem;
         } else if (item && typeof item === 'object') {
             const maTrongHeThong = (item.mamay || item.macode || item.code || item.maThietBi || "").toString().trim().toUpperCase();
@@ -104,8 +105,9 @@ async function sendWorkReport() {
 
     if (!noidung2) return alert("⚠️ Vui lòng nhập đầy đủ tên máy!");
 
+    // Viết thường chữ cái đầu của tên máy
     noidung2 = noidung2.charAt(0).toLowerCase() + noidung2.slice(1);
-    const noidungHoanChinh = `${noidung1} ${noidung2} ${noidung3}`;
+    const noidungHoanChinh = `${noidung1} ${noidung2} ${noidung3}`.trim();
 
     const payload = {
         action: "create",
@@ -119,6 +121,7 @@ async function sendWorkReport() {
     if (loader) loader.style.display = "inline-block";
 
     try {
+        // Lưu ý: no-cors sẽ không ném lỗi nếu script Google phản hồi thất bại.
         await fetch(G_URL, { 
             method: "POST", 
             mode: "no-cors", 
@@ -126,11 +129,13 @@ async function sendWorkReport() {
             headers: { "Content-Type": "application/json" }
         });
         
-        alert("✅ Gửi thành công!");
-        loadData(); 
+        alert("✅ Gửi hoàn tất (Đã gửi yêu cầu lên hệ thống)!");
         
         if (document.getElementById('noidung2')) document.getElementById('noidung2').value = "";
         if (document.getElementById('noidung3')) document.getElementById('noidung3').value = "KLM-CK-";
+        
+        // Đợi 1 giây trước khi load lại dữ liệu để Google kịp cập nhật sheet
+        setTimeout(loadData, 1000); 
     } catch (err) {
         alert("❌ Lỗi gửi: " + err.message);
     } finally {
@@ -158,8 +163,9 @@ function filterData() {
         if (filtered.length === 0) {
             content += "(Chưa có dữ liệu)";
         } else {
-            content = `- Trực và kiểm tra hệ thống điện toàn nhà máy KLM \n`;
-            content = `- Theo dõi chuyền Ed, vận hành thiết bị phụ trợ \n`;
+            // ĐÃ SỬA: Dùng += để tích lũy chuỗi, không dùng dấu = gây ghi đè làm mất dữ liệu
+            content += `- Trực và kiểm tra hệ thống điện toàn nhà máy KLM \n`;
+            content += `- Theo dõi chuyền Ed, vận hành thiết bị phụ trợ \n`;
             filtered.forEach(item => {
                 content += `- ${item.noidung}\n`;
             });
@@ -181,7 +187,7 @@ function filterData() {
             div.innerHTML = `
                 <span class="report-item-text" style="font-size:14px; word-break: break-word;">- ${item.noidung}</span>
                 <div class="d-flex gap-1">
-                    <button class="btn btn-sm btn-outline-warning py-0 px-2" onclick="editReport('${rowId}', '${item.noidung}')">✏️</button>
+                    <button class="btn btn-sm btn-outline-warning py-0 px-2" onclick="editReport('${rowId}', \`${item.noidung.replace(/'/g, "\\'")}\`)">✏️</button>
                     <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="deleteReport('${rowId}')">❌</button>
                 </div>
             `;
@@ -200,7 +206,7 @@ async function editReport(id, oldContent) {
     try {
         await fetch(G_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
         alert("✅ Đã gửi yêu cầu sửa!");
-        loadData();
+        setTimeout(loadData, 1000);
     } catch (e) {
         alert("❌ Lỗi sửa: " + e.message);
     }
@@ -215,14 +221,13 @@ async function deleteReport(id) {
     try {
         await fetch(G_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
         alert("✅ Đã gửi yêu cầu xóa!");
-        loadData();
+        setTimeout(loadData, 1000);
     } catch (e) {
         alert("❌ Lỗi xóa: " + e.message);
     }
 }
 
 function copyAllReport() {
-    // Tự động kiểm tra xem đang xài giao diện Textarea hay List
     const reportArea = document.getElementById('reportText');
     let content = "";
 
@@ -233,8 +238,8 @@ function copyAllReport() {
         if (!filterDateEl || !filterDateEl.value) return alert("Vui lòng chọn ngày!");
         const d = filterDateEl.value.split('-');
         content = `Báo cáo công việc ca 2 ngày: ${d[2]}/${d[1]}/${d[0]}\n`;
-        content = `- Trực và kiểm tra hệ thống điện toàn nhà máy KLM \n`;
-        content = `- Theo dõi chuyền Ed, vận hành thiết bị phụ trợ \n`;
+        content += `- Trực và kiểm tra hệ thống điện toàn nhà máy KLM \n`;
+        content += `- Theo dõi chuyền Ed, vận hành thiết bị phụ trợ \n`;
         
         const items = document.querySelectorAll('.report-item-text');
         items.forEach(el => { content += el.innerText + "\n"; });
@@ -243,13 +248,15 @@ function copyAllReport() {
     if (!content || content.includes("(Chưa có dữ liệu)")) return alert("Không có dữ liệu để chép!");
 
     if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(content).then(() => { showCopySuccess(); }).catch(() => { fallbackCopyText(content); });
+        navigator.clipboard.writeText(content)
+            .then(() => { showCopySuccess(); })
+            .catch(() => { fallbackCopyText(content); });
     } else {
         fallbackCopyText(content);
     }
 }
 
-function copyReport() { copyAllReport(); } // Hỗ trợ cả tên hàm cũ lẫn mới để tránh lỗi nút bấm
+function copyReport() { copyAllReport(); } 
 
 function showCopySuccess() {
     const btn = document.querySelector('button[onclick="copyAllReport()"]') || document.querySelector('button[onclick="copyReport()"]');
@@ -264,7 +271,7 @@ function fallbackCopyText(text) {
     const textArea = document.createElement("textarea");
     textArea.value = text;
     textArea.style.position = "fixed";
-    textArea.style.left = "-999999px";
+    textArea.style.opacity = "0";
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
@@ -272,7 +279,7 @@ function fallbackCopyText(text) {
         document.execCommand('copy');
         showCopySuccess();
     } catch (err) {
-        alert("❌ Không thể sao chép tự động!");
+        alert("❌ Không thể sao chép tự động! Bạn hãy tự bôi đen văn bản để copy.");
     }
     document.body.removeChild(textArea);
 }
