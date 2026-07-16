@@ -160,12 +160,13 @@ function filterData() {
     // HƯỚNG 1: Nếu HTML cũ dùng ô Textarea
     if (reportArea) {
         let content = `Báo cáo công việc ca 2 ngày: ${d[2]}/${d[1]}/${d[0]}\n`;
-        if (filtered.length === 0) {
-            content += "(Chưa có dữ liệu)";
-        } else {
             // ĐÃ SỬA: Dùng += để tích lũy chuỗi, không dùng dấu = gây ghi đè làm mất dữ liệu
             content += `- Trực và kiểm tra hệ thống điện toàn nhà máy KLM \n`;
             content += `- Theo dõi chuyền Ed, vận hành thiết bị phụ trợ \n`;
+        if (filtered.length === 0) {
+            content += "(Chưa có dữ liệu)";
+        } else {
+
             filtered.forEach(item => {
                 content += `- ${item.noidung}\n`;
             });
