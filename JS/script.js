@@ -154,9 +154,7 @@ function filterData() {
 
     // HƯỚNG 1: Nếu HTML cũ dùng ô Textarea
     if (reportArea) {
-        let content = `Báo cáo công việc ca 2 ngày: ${d[2]}/${d[1]}/${d[0]}\n`;
-        let content = `- Trực và kiểm tra hệ thống điện toàn nhà máy KLM \n`;
-        let content = `- Theo dõi chuyền Ed, vận hành thiết bị phụ trợ \n`;
+        let content = `Báo cáo công việc ca 2 ngày: ${d[2]}/${d[1]}/${d[0]}\n - Trực và kiểm tra hệ thống điện toàn nhà máy KLM \n - Theo dõi chuyền Ed, vận hành thiết bị phụ trợ \n`;
         if (filtered.length === 0) {
             content += "(Chưa có dữ liệu)";
         } else {
